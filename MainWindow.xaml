@@ -14,11 +14,11 @@
         <!-- StackPanel to contain labels, progress bar, and total progress -->
         <StackPanel Grid.Row="1" Margin="20">
             <!-- Label to display ping time -->
-            <Label x:Name="serverRegion" Content="Server Region: " Margin="0 0 0 20" Foreground="White" FontSize="20"/>
-            <Label x:Name="pingTimeLabel" Content="Ping Time:" Margin="0 0 0 20" Foreground="White" FontSize="20"/>
+            <Label x:Name="serverRegion" Content="Nearest Server: Waiting..." Margin="0 0 0 20" Foreground="White" FontSize="20"/>
+            <Label x:Name="pingTimeLabel" Content="Ping Time: Waiting..." Margin="0 0 0 20" Foreground="White" FontSize="20"/>
 
             <!-- Label to display download speed -->
-            <Label x:Name="downloadSpeedLabel" Content="Download Speed:" Margin="0 0 0 20" Foreground="White" FontSize="20"/>
+            <Label x:Name="downloadSpeedLabel" Content="Download Speed: Waiting..." Margin="0 0 0 20" Foreground="White" FontSize="20"/>
 
             <!-- Progress bar and total progress -->
             <ProgressBar x:Name="downloadProgressBar" Maximum="100" Height="40" Margin="0 0 0 10">
@@ -41,7 +41,7 @@
         </ProgressBar>
 
 
-            <TextBlock x:Name="progressTextBlock" Text="0%" Margin="0 0 0 10" Foreground="White" FontSize="20"/>
+            <TextBlock x:Name="progressTextBlock" Text="" Margin="0 0 0 10" Foreground="White" FontSize="20"/>
 
             <!-- Button to start the test -->
             <Button x:Name="startTestButton" Content="Start Test" Margin="0 0 0 20" Click="StartTest_Click" FontSize="20"/>

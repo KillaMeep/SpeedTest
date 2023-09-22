@@ -40,7 +40,7 @@ namespace SpeedTestApp
 
             // Ping all servers in parallel and get the best server
             string bestServer = await GetBestServerByPingAsync();
-            serverRegion.Content = $"Server Region: {bestServer}";
+            serverRegion.Content = $"Nearest Server: {bestServer}";
 
             // Use the best server location for the speed test
             string fileUrl = serverUrls[bestServer];
@@ -112,6 +112,7 @@ namespace SpeedTestApp
                     if (e.BytesReceived == fileSizeBytes)
                     {
                         stopwatch.Stop();
+                        progressTextBlock.Text = $"{e.BytesReceived / 1048576}MB/{fileSizeBytes / 1048576}MB ({(double)e.BytesReceived / fileSizeBytes * 100:F2}%)";
                     }
                     else
                     {
