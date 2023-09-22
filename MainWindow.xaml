@@ -1,0 +1,49 @@
+﻿<Window x:Class="SpeedTestApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Download Speed Test" SizeToContent="WidthAndHeight"
+        Background="#292828">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- StackPanel to contain labels, progress bar, and total progress -->
+        <StackPanel Grid.Row="1" Margin="20">
+            <!-- Label to display ping time -->
+            <Label x:Name="pingTimeLabel" Content="Ping Time:" Margin="0 0 0 20" Foreground="White" FontSize="20"/>
+
+            <!-- Label to display download speed -->
+            <Label x:Name="downloadSpeedLabel" Content="Download Speed:" Margin="0 0 0 20" Foreground="White" FontSize="20"/>
+
+            <!-- Progress bar and total progress -->
+            <ProgressBar x:Name="downloadProgressBar" Maximum="100" Height="40" Margin="0 0 0 10">
+            <ProgressBar.Style>
+                <Style TargetType="ProgressBar">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ProgressBar">
+                                <Grid x:Name="PART_Track">
+                                    <!-- Background Rectangle -->
+                                    <Rectangle x:Name="PART_TrackBackground" Fill="#171716" />
+                                    <!-- Indicator -->
+                                    <Rectangle x:Name="PART_Indicator" HorizontalAlignment="Left" Fill="#FA9500"/>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ProgressBar.Style>
+        </ProgressBar>
+
+
+            <TextBlock x:Name="progressTextBlock" Text="0%" Margin="0 0 0 10" Foreground="White" FontSize="20"/>
+
+            <!-- Button to start the test -->
+            <Button x:Name="startTestButton" Content="Start Test" Margin="0 0 0 20" Click="StartTest_Click" FontSize="20"/>
+        </StackPanel>
+    </Grid>
+</Window>
