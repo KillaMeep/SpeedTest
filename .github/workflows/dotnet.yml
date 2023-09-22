@@ -1,30 +1,37 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: Build and Publish
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main  # Adjust to your main branch name
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build (Needs .NET)
-      run: dotnet publish -r win-x64 -p:PublishSingleFile=true --self-contained false
-    - name: Build (Self Contained)
-      run: dotnet publish -r win-x64 -p:PublishSingleFile=true --self-contained false
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '8.x'  # Adjust to the desired .NET 8.0 version
+
+      - name: Build and Publish Standalone
+        run: |
+          dotnet restore
+          dotnet publish -c Release -r win-x64 -p:PublishSingleFile=true --self-contained true
+        working-directory: .  # Use "." to specify the current directory (root)
+
+      - name: Build and Publish .NET
+        run: |
+          dotnet restore
+          dotnet publish -c Release -r win-x64 -p:PublishSingleFile=true --self-contained false
+        working-directory: .  # Use "." to specify the current directory (root)
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: builds
+          path: ./bin/Release/net8.0/win-x64/publish  # Adjust the path to match your project's output folder
