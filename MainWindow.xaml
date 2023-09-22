@@ -14,6 +14,7 @@
         <!-- StackPanel to contain labels, progress bar, and total progress -->
         <StackPanel Grid.Row="1" Margin="20">
             <!-- Label to display ping time -->
+            <Label x:Name="serverRegion" Content="Server Region: " Margin="0 0 0 20" Foreground="White" FontSize="20"/>
             <Label x:Name="pingTimeLabel" Content="Ping Time:" Margin="0 0 0 20" Foreground="White" FontSize="20"/>
 
             <!-- Label to display download speed -->

@@ -4,15 +4,27 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using System.Windows;
-using System.IO; 
+using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SpeedTestApp
 {
     public partial class MainWindow : Window
     {
-        private double downloadSpeedMbps = 0; // Variable to store download speed result
-        private long pingTimeMs = 0;          // Variable to store ping time result
-        private string tempFilePath = Path.Combine(Path.GetTempPath(), "tempFile.zip");
+        private Dictionary<string, string> serverUrls = new Dictionary<string, string>
+        {
+            { "New York", "https://speedtest-ny.turnkeyinternet.net/100mb.bin" },
+            { "California", "https://speedtest-ca.turnkeyinternet.net/100mb.bin" },
+            { "Colorado", "https://speedtest-co.turnkeyinternet.net/100mb.bin" },
+            { "Chicago", "https://speedtest-chi.turnkeyinternet.net/100mb.bin" },
+            { "Miami", "https://speedtest-mia.turnkeyinternet.net/100mb.bin" },
+            { "Amsterdam", "https://speedtest-ams.turnkeyinternet.net/100mb.bin" }
+        };
+
+        private double downloadSpeedMbps = 0;
+        private long pingTimeMs = 0;
+        private string tempFilePath = Path.Combine(Path.GetTempPath(), "100mb.bin");
 
         public MainWindow()
         {
@@ -21,33 +33,71 @@ namespace SpeedTestApp
 
         private async void StartTest_Click(object sender, RoutedEventArgs e)
         {
-            // Add the code to start the speed test when the button is clicked
-            string fileUrl = "http://link.testfile.org/150MB";
-            int downloadFileSizeBytes = 150 * 1024 * 1024;
-
-            // Reset progress bar, total progress, and download speed label
             downloadProgressBar.Value = 0;
             progressTextBlock.Text = "0%";
             downloadSpeedLabel.Content = "Download Speed: Waiting...";
-            startTestButton.IsEnabled = false; // Disable the button while the test is running
+            startTestButton.IsEnabled = false;
 
-            // Measure ping time after the download is complete
-            pingTimeLabel.Content = $"Ping Time: Testing... ";
-            pingTimeMs = MeasurePingTime("www.google.com"); // Replace with your desired server
+            // Ping all servers in parallel and get the best server
+            string bestServer = await GetBestServerByPingAsync();
+            serverRegion.Content = $"Server Region: {bestServer}";
+
+            // Use the best server location for the speed test
+            string fileUrl = serverUrls[bestServer];
+
+            // Measure ping time to the selected server
+            pingTimeLabel.Content = $"Ping Time: Testing...";
+            pingTimeMs = MeasurePingTime(new Uri(fileUrl).Host);
             pingTimeLabel.Content = $"Ping Time: {pingTimeMs} ms";
 
-            // Start the download and update progress
-            await MeasureDownloadSpeedAsync(fileUrl, downloadFileSizeBytes);
+            await MeasureDownloadSpeedAsync(fileUrl, 100 * 1024 * 1024);
 
-            // Update the labels with the test results and average speed
-            downloadSpeedLabel.Content = $"Download Speed (Avg):\n{downloadSpeedMbps:F2} MB/s\n{downloadSpeedMbps*8:F2} Mbps";
+            downloadSpeedLabel.Content = $"Download Speed (Avg):\n{downloadSpeedMbps:F2} MB/s\n{downloadSpeedMbps * 8:F2} Mbps";
 
-            // Enable the button to run the test again
             startTestButton.Content = "Run Again";
-            startTestButton.IsEnabled = true; // Enable the button for the next test
+            startTestButton.IsEnabled = true;
 
-            // Delete the temporary file after the tests are completed
             DeleteTempFile(tempFilePath);
+        }
+
+        private async Task<string> GetBestServerByPingAsync()
+        {
+            // Ping all servers in parallel
+            var pingTasks = serverUrls.Select(async kvp =>
+            {
+                string serverName = kvp.Key;
+                string serverUrl = kvp.Value;
+                long pingTime = await MeasurePingTimeAsync(new Uri(serverUrl).Host);
+                return new { ServerName = serverName, PingTime = pingTime };
+            }).ToList();
+
+            var pingResults = await Task.WhenAll(pingTasks);
+
+            // Select the server with the lowest ping time
+            var bestServer = pingResults.OrderBy(result => result.PingTime).FirstOrDefault();
+
+            return bestServer?.ServerName ?? "Default Server";
+        }
+
+        private async Task<long> MeasurePingTimeAsync(string serverHostname)
+        {
+            try
+            {
+                Ping ping = new Ping();
+                PingReply reply = await ping.SendPingAsync(serverHostname);
+
+                if (reply.Status == IPStatus.Success)
+                {
+                    return reply.RoundtripTime;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error pinging server: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // Return a high value if the ping fails
+            return long.MaxValue;
         }
 
         private async Task MeasureDownloadSpeedAsync(string fileUrl, int fileSizeBytes)
@@ -55,7 +105,7 @@ namespace SpeedTestApp
             using (var webClient = new WebClient())
             {
                 Stopwatch stopwatch = new Stopwatch();
-                long lastBytesReceived = 0; // Store the bytes received in the previous event
+                long lastBytesReceived = 0;
 
                 webClient.DownloadProgressChanged += (sender, e) =>
                 {
@@ -65,18 +115,12 @@ namespace SpeedTestApp
                     }
                     else
                     {
-                        // Update the progress bar value
                         downloadProgressBar.Value = (double)e.BytesReceived / fileSizeBytes * 100;
-
-                        // Update the total progress text in MB
                         progressTextBlock.Text = $"{e.BytesReceived / 1048576}MB/{fileSizeBytes / 1048576}MB ({(double)e.BytesReceived / fileSizeBytes * 100:F2}%)";
 
-                        // Calculate current download speed in MB/s
-                        double currentSpeedMBps = e.BytesReceived / (stopwatch.Elapsed.TotalSeconds * 1048576); // MB/s
-                        downloadSpeedLabel.Content = $"Download Speed:\n{currentSpeedMBps:F2} MB/s\n{currentSpeedMBps*8:F2} Mbps";
+                        double currentSpeedMBps = e.BytesReceived / (stopwatch.Elapsed.TotalSeconds * 1048576);
+                        downloadSpeedLabel.Content = $"Download Speed:\n{currentSpeedMBps:F2} MB/s\n{currentSpeedMBps * 8:F2} Mbps";
 
-
-                        // Update the last bytes received
                         lastBytesReceived = e.BytesReceived;
                     }
                 };
@@ -85,8 +129,7 @@ namespace SpeedTestApp
                 await webClient.DownloadFileTaskAsync(new Uri(fileUrl), tempFilePath);
                 double elapsedSeconds = stopwatch.Elapsed.TotalSeconds;
 
-                // Calculate average download speed in MB/s
-                downloadSpeedMbps = fileSizeBytes / (elapsedSeconds * 1048576); // MB/s
+                downloadSpeedMbps = fileSizeBytes / (elapsedSeconds * 1048576);
             }
         }
 
@@ -101,7 +144,7 @@ namespace SpeedTestApp
             }
             else
             {
-                return -1; // Ping failed
+                return -1;
             }
         }
 
